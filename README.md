@@ -3,6 +3,13 @@
 [![Build Status](https://travis-ci.com/SPFlow/SPFlow.svg?branch=master)](https://travis-ci.com/SPFlow/SPFlow)
 
 
+Forked version for Advanced Topics in Cloud Computing
+
+
+MicroPython implementation of Co-Cloud Inferencing
+
+----
+
 # SPFlow: An Easy and Extensible Library for Sum-Product Networks
 
 SPFlow, an open-source Python library providing a simple interface to inference,
