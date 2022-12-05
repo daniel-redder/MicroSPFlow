@@ -198,6 +198,12 @@ def marginilizer(edge, scope):
 
 
 
+def FunctionBuilder(edge,cloud,rootWeights):
+
+
+    def edgeProcess():
+
+
 
 
 def processor(edge, cloud, rootWeights):
@@ -240,7 +246,7 @@ def processor(edge, cloud, rootWeights):
 
 edge, cloud, scope, rootWeights = partition_processor(spn,nmax=135,pe=12,pc=8,l=1000)
 scope = {f"V{x}":1 for x in scope}
-scope["V72"] = 1
+scope["V72"] = 0
 
 edge = marginilizer(edge, scope)
 cloud = marginilizer(cloud, scope)
@@ -251,7 +257,7 @@ print(processor(edge,cloud,rootWeights))
 import numpy as np
 from spn.algorithms.Inference import log_likelihood
 print(len(scope.values()))
-log_likelihood(spn,np.array(scope.values()))
+#log_likelihood(spn,np.array(scope.values()))
 
 
 
