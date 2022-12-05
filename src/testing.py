@@ -9,21 +9,21 @@ with open("original/models/spn_jester.pkle","rb") as f:
     spn = pickle.load(f)
 
 
-print(spn.scope)
+#print(spn.scope)
 leafs = []
 
 
 def childCounter(node):
     #print(node.children)
     if not hasattr(node, "children"):
-        print("hi")
+        #print("hi")
         node.count = 1
         global leafs
         leafs.append(node)
         return 1
     value =  sum([childCounter(x) for x in node.children]) + 1
     node.count = value
-    print(value)
+    #print(value)
     return value
 
 
@@ -56,25 +56,36 @@ def partitioner(spn,nmax,pe,pc,l):
 
     edge = []
     cloud = spn.children
+    for x in range(len(cloud)): cloud[x].wp = spn.weights[x]
+
 
     #Looped Partitioning Here
 
     while True:
-        print("")
+        #print("")
         possibility = [(x.count,x) for x in cloud if x.count <= nmax]
         latency = []
 
         #no possible path
         if possibility is None or len(possibility) == 0:
             print("no more possible paths")
-            return edge, cloud
+
+
+            edgeWeights = [no.wp for no in edge]
+            cloudWeights = [no.wp for no in cloud]
+
+            return edge, cloud, edgeWeights, cloudWeights
 
         if len(possibility) == 1:
             edge.append(possibility[0])
             cloud.remove(possibility[0])
             nmax = nmax-possibility[0]
             print("final path found")
-            return edge, cloud
+
+            edgeWeights = [no.wp for no in edge]
+            cloudWeights = [no.wp for no in cloud]
+
+            return edge, cloud, edgeWeights, cloudWeights
 
 
 
@@ -109,8 +120,8 @@ def convertHistOps(parse:str, li=[]):
             for x in range(len(parse)):
                 for y in range(1,len(parse[x])):
                     parse[x][y]=parse[x][y].split(":")
-                    parse[x][y][2] = parse[x][y][2].split(",")
-                    parse[x][y][1] = parse[x][y][1].split(",")
+                    parse[x][y][2] = [float('.'.join(v.split('.')[0:2])) for v in parse[x][y][2].split(",")]
+                    parse[x][y][1] = [int(v) for v in parse[x][y][1].split(",")]
 
             return parse
         endepoint = parse.find(")",point,-1)+1
@@ -118,10 +129,6 @@ def convertHistOps(parse:str, li=[]):
         #print
 
         testStr= testStr.split("(")
-
-        if len(testStr)==1:
-            print(testStr)
-            print(parse)
 
         testStr = testStr[1].split("|")
 
@@ -155,7 +162,7 @@ def convertHistOps(parse:str, li=[]):
 
 
 def partition_processor(spn,nmax,pe,pc,l):
-    edge, cloud = partitioner(spn,nmax,pe,pc,l)
+    edge, cloud, edge_weights, cloud_weights = partitioner(spn,nmax,pe,pc,l)
 
     if len(edge)>0:
         edge = [convertHistOps(spn_to_str_equation(x)) for x in edge]
@@ -172,7 +179,7 @@ def partition_processor(spn,nmax,pe,pc,l):
     #print(cloud)
 
 
-    return edge, cloud, spn.scope
+    return edge, cloud, spn.scope, (edge_weights, cloud_weights)
 
 
 
@@ -183,29 +190,68 @@ def marginilizer(edge, scope):
     results = []
     for pathind in range(len(edge)):
         path = edge[pathind]
-        print(path)
-        for s in scope:
-            pass
-
-        #print(path)
-
-
-edge, cloud, scope = partition_processor(spn,nmax=135,pe=12,pc=8,l=1000)
-scope = {x:1 for x in scope}
-print(edge)
-
-#marginilizer(edge,scope=scope)
-
-print(scope)
-
-#print(spn_to_str_equation(edge[0]))
-#print(convertHistOps(spn_to_str_equation(edge[0])))
-
-#leaf = leafs[0]
-
-#print(convertHistOps(spn_to_str_equation(leaf)))
+        for sumind in range(len(path)):
+            for prodind in range(1,len(path[sumind])):
+                path[sumind][prodind].append(scope[path[sumind][prodind][0]])
+        edge[pathind] = path
+    return edge
 
 
+
+
+
+def processor(edge, cloud, rootWeights):
+
+    edgeArch = []
+    for x in edge:
+        edgeArch.append(0)
+        for sumind in range(len(x)):
+            hold = float(x[sumind][0])
+            #print(hold)
+            for i in range(1,len(x[sumind])):
+                if x[sumind][i][3]<1:
+                    #print(x[sumind][i][2][0])
+                    hold*=x[sumind][i][2][0]
+                elif x[sumind][i][3]>1:
+                    hold*=x[sumind][i][2][1]
+
+            edgeArch[-1]+=hold
+
+    cloudArch = []
+    for x in cloud:
+        cloudArch.append(0)
+        for sumind in range(len(x)):
+            hold = float(x[sumind][0])
+            for i in range(1, len(x[sumind])):
+                if x[sumind][i][3] < 1:
+                    hold *= x[sumind][i][2][0]
+                elif x[sumind][i][3] > 1:
+                    hold *= x[sumind][i][2][1]
+
+            cloudArch[-1]+=hold
+
+    return sum([edgeArch[x]*rootWeights[0][x] for x in range(len(edgeArch))]) + sum([cloudArch[x]*rootWeights[1][x] for x in range(len(cloudArch))])
+
+
+
+
+
+
+
+edge, cloud, scope, rootWeights = partition_processor(spn,nmax=135,pe=12,pc=8,l=1000)
+scope = {f"V{x}":1 for x in scope}
+scope["V72"] = 1
+
+edge = marginilizer(edge, scope)
+cloud = marginilizer(cloud, scope)
+
+print(processor(edge,cloud,rootWeights))
+
+
+import numpy as np
+from spn.algorithms.Inference import log_likelihood
+print(len(scope.values()))
+log_likelihood(spn,np.array(scope.values()))
 
 
 
