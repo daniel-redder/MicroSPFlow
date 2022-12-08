@@ -224,3 +224,6 @@ docs/api
 docs/_build
 docs/log.txt
 docs/cache
+/src/esp32.cert.pem
+/src/esp32.private.key
+/src/root-CA.crt
