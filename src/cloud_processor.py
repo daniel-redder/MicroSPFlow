@@ -60,6 +60,7 @@ def processor(part, data, marginals, rootWeights):
 for message in queue.receive_messages():
     print(message.body)
 
+    message.delete()
 """
 for queue in sqs.queues.all():
     print(queue.url)
