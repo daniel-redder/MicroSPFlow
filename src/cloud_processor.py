@@ -6,6 +6,7 @@ cloud processor portion
 import boto3
 import json
 import time
+import re
 
 sqs = boto3.resource("sqs", region_name = 'us-east-1')
 queue = sqs.get_queue_by_name(QueueName='aq')
@@ -62,8 +63,10 @@ def processor(part, data, marginals, rootWeights):
 
 while True:
     for message in queue.receive_messages():
+        print("message found")
         print(message.body)
-        contents=json.loads(message.body)
+        contets = re.sub("'",'"',message.body)
+        contents=json.loads(contents)
         message.delete()
 
         result = processor(contents["spn"],contents["data"],contents["marginal"],contents["rootWeights"])
