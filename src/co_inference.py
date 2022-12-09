@@ -41,7 +41,11 @@ def responseCatch(client, userdata, message):
     global response
     response = float(json.loads(message.payload)["result"])
     print(message.payload)
+    message.delete()
     response_catcher.set()
+
+
+mqtt.subscribe("esp32/result", 1, callback = responseCatch)
 
 
 
@@ -80,8 +84,8 @@ for process in spn:
         edge_process["data"], edge_process["marginal"] = test["data"], test["marginal"]
 
         l_p = datetime.datetime.now()
-        mqtt.publish("esp32/profile", str(cloud_process), 0)
-        mqtt.subscribe("esp32/profileCallback", 1, callback = responseCatch)
+        mqtt.publish("esp32/process", str(cloud_process), 0)
+
 
         edge_result=processor(edge_process["spn"],edge_process["data"],edge_process["marginal"],edge_process["rootWeights"])
 
@@ -103,6 +107,10 @@ for process in spn:
 
 
 process_set = {"hold":process_set}
+
+mqtt.unsubscribe("esp32/result")
+mqtt.disconnect()
+
 
 with open("stats/results.json","w+") as f:
     json.dump(process_set)
