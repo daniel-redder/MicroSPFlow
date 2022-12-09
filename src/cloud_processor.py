@@ -65,7 +65,7 @@ while True:
     for message in queue.receive_messages():
         print("message found")
         print(message.body)
-        contets = re.sub("'",'"',message.body)
+        contents = re.sub("'",'"',message.body)
         contents=json.loads(contents)
         message.delete()
 
