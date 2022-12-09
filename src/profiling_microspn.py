@@ -6,11 +6,12 @@ micropython compatible except for MQTT utility
 https://github.com/micropython/micropython/issues/5929
 ussl problems
 """
-import time
+import datetime
 import secrets
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from processor import pTest, getTestNodes
 from multiprocessing import Event
+import json
 
 server_crt = "root-CA.crt"
 local_crt = "esp32.cert.pem"
@@ -45,22 +46,23 @@ def responseCatch(client, userdata, message):
 def fullCatch(client, userdata, message):
     global response_latency
     response_latency = message.payload
+    print(response_latency)
     global completion_catcher
     completion_catcher.set()
 
 
 def profile():
 
-    p_e_b = time.time()
+    p_e_b = datetime.datetime.now()
     nodeCount = pTest()
-    p_e_a = time.time()
+    p_e_a = datetime.datetime.now()
 
     p_e = (p_e_a - p_e_b) / nodeCount
 
     #I do not include connection time in p_c profiling
     mqtt.connect()
 
-    l_b = time.time()
+    l_b = datetime.datetime.now()
     mqtt.publish("esp32/profile",str(getTestNodes()),0)
 
     mqtt.subscribe("esp32/profileCallback", 1, callback = responseCatch)
@@ -69,21 +71,25 @@ def profile():
     global response_catcher
     response_catcher.wait(100)
 
-    l_a = time.time()
+    l_a = datetime.datetime.now()
 
     l = (l_a - l_b) / 2
 
     global completion_catcher
     completion_catcher.wait(100)
+
+    #p_c.microseconds/1000
+    global response_latency
+    p_c = json.loads(response_latency)["p_c"]
+
+
     mqtt.unsubscribe("esp32/profileCallback")
     mqtt.unsubscribe("esp32/result")
     mqtt.disconnect()
 
-    p_c_a = time.time()
 
-    p_c = (p_c_a - l_b) - 2*l
 
-    return p_e, p_c, l
+    return p_e.microseconds/1000, p_c, l.microseconds/1000
 
 
 print(profile())

@@ -6,6 +6,7 @@ cloud processor portion
 import boto3
 import json
 import time
+import datetime
 import re
 
 sqs = boto3.resource("sqs", region_name = 'us-east-1')
@@ -65,16 +66,25 @@ while True:
     for message in queue.receive_messages():
         print("message found")
         print(message.body)
+
+        p_c_b = datetime.datetime.now()
+
         contents = message.body.replace("'",'"')
         contents = contents.replace("None","null")
         contents=json.loads(contents)
         message.delete()
 
         result = processor(contents["spn"],contents["data"],contents["marginal"],contents["rootWeights"])
+
+        p_c_a = datetime.datetime.now()
+
+        p_c = p_c_a - p_c_b
+        p_c = p_c.microseconds
+
         client.publish(
             topic = 'esp32/result',
             qos=1,
-            payload= json.dumps({'id':contents['id'],'result':result})
+            payload= json.dumps({'id':contents['id'],'result':result,'p_c':p_c})
         )
     time.sleep(.5/1000)
 
