@@ -57,7 +57,13 @@ def profile():
     nodeCount = pTest()
     p_e_a = datetime.datetime.now()
 
+    print(p_e_b,p_e_a)
+
     p_e = (p_e_a - p_e_b) / nodeCount
+
+    #Calculation to fast to measure on fast processors. My i9 to fast for ya ;)
+    if p_e == 0.0:
+        p_e = 1.0
 
     #I do not include connection time in p_c profiling
     mqtt.connect()
@@ -89,7 +95,7 @@ def profile():
 
 
 
-    return p_e.microseconds/1000, p_c, l.microseconds/1000
+    return p_e.microseconds/1000, p_c/nodeCount/1000, l.microseconds/1000
 
 
 print(profile())
