@@ -34,13 +34,11 @@ mqtt.configureMQTTOperationTimeout(5)  # 5 sec
 
 response_catcher = Event()
 completion_catcher = Event()
-latency = None
 response_latency = None
 
 def responseCatch(client, userdata, message):
-    global latency
-    latency = message.payload
     global response_catcher
+    print(message.payload)
     response_catcher.set()
 
 
@@ -66,7 +64,7 @@ def profile():
     mqtt.publish("esp32/profile",str(getTestNodes()),0)
 
     mqtt.subscribe("esp32/profileCallback", 1, callback = responseCatch)
-    mqtt.subscribe("esp32/profile_results",1,callback = fullCatch)
+    mqtt.subscribe("esp32/result",1,callback = fullCatch)
 
     global response_catcher
     response_catcher.wait(100)
@@ -78,7 +76,7 @@ def profile():
     global completion_catcher
     completion_catcher.wait(100)
     mqtt.unsubscribe("esp32/profileCallback")
-    mqtt.unsubscribe("esp32/profile_results")
+    mqtt.unsubscribe("esp32/result")
     mqtt.disconnect()
 
     p_c_a = time.time()
@@ -88,3 +86,4 @@ def profile():
     return p_e, p_c, l
 
 
+print(profile())

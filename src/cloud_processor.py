@@ -4,8 +4,12 @@ Author: Daniel Redder
 cloud processor portion
 """
 import boto3
+import json
+import time
+
 sqs = boto3.resource("sqs", region_name = 'us-east-1')
 queue = sqs.get_queue_by_name(QueueName='aq')
+client = boto3.client('iot-data','us-east-1')
 
 
 def marginilizer(edge, scope):
@@ -56,11 +60,22 @@ def processor(part, data, marginals, rootWeights):
     return sum([edgeArch[x]*rootWeights[x] for x in range(len(edgeArch))])
 
 
+while True:
+    for message in queue.receive_messages():
+        print(message.body)
+        contents=json.loads(message.body)
+        message.delete()
 
-for message in queue.receive_messages():
-    print(message.body)
+        result = processor(contents["spn"],contents["data"],contents["marginal"],contents["rootWeights"])
+        client.publish(
+            topic = 'esp32/result',
+            qos=1,
+            payload={'id':contents['id'],'result':result}
+        )
+    time.sleep(.5/1000)
 
-    message.delete()
+
+
 """
 for queue in sqs.queues.all():
     print(queue.url)
