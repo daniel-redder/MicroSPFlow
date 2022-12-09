@@ -5,6 +5,7 @@ cloud processor portion
 """
 import boto3
 sqs = boto3.resource("sqs", region_name = 'us-east-1')
+queue = sqs.get_queue_by_name(QueueName='aq')
 
 
 def marginilizer(edge, scope):
@@ -55,7 +56,11 @@ def processor(part, data, marginals, rootWeights):
     return sum([edgeArch[x]*rootWeights[x] for x in range(len(edgeArch))])
 
 
+
+for message in queue.receive_messages():
+    print(message)
+
+"""
 for queue in sqs.queues.all():
     print(queue.url)
-
-
+"""
