@@ -34,6 +34,7 @@ mqtt.configureMQTTOperationTimeout(5)  # 5 sec
 
 global response_catcher
 response_catcher = Event()
+global response
 response = None
 
 def responseCatch(client, userdata, message):
@@ -95,7 +96,7 @@ for process in spn:
         response_catcher.wait(100)
         response_catcher.clear()
 
-        global response
+
 
         result = edge_process + response
 
