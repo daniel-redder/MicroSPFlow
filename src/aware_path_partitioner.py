@@ -5,7 +5,7 @@ dependent on numpy functionality
 """
 import re
 from spn.io.Text import spn_to_str_equation
-
+import copy
 leafs = []
 
 
@@ -43,15 +43,21 @@ def partitioner(spn,nmax,pe,pc,l):
 
 
     """
+    spn = copy.deepcopy(spn)
+
+    #print("inpart")
     # setting a node count to each child in the spn
     childCounter(spn)
+    spn.count = sum([x.count for x in spn.children])
+    #print(spn.count)
 
     if spn.count < nmax:
-        print("the full SPN fits on edge")
+        #print("the full SPN fits on edge")
         return spn.children, [], spn.weights, []
 
     edge = []
     cloud = spn.children
+    #print(len(cloud), "cloud len")
     for x in range(len(cloud)): cloud[x].wp = spn.weights[x]
 
 
@@ -59,12 +65,13 @@ def partitioner(spn,nmax,pe,pc,l):
 
     while True:
         #print("")
-        possibility = [(x.count,x) for x in cloud if x.count <= nmax]
+        possibility = [x for x in cloud if x.count <= nmax]
+        #print("test: ",possibility, [x.count for x in cloud], nmax)
         latency = []
 
         #no possible path
         if possibility is None or len(possibility) == 0:
-            print("no more possible paths")
+            #print("no more possible paths")
 
 
             edgeWeights = [no.wp for no in edge]
@@ -73,10 +80,12 @@ def partitioner(spn,nmax,pe,pc,l):
             return edge, cloud, edgeWeights, cloudWeights
 
         if len(possibility) == 1:
+            #print(possibility)
+            #print(edge,cloud)
             edge.append(possibility[0])
             cloud.remove(possibility[0])
-            nmax = nmax-possibility[0]
-            print("final path found")
+            nmax = nmax-possibility[0].count
+            #print("final path found")
 
             edgeWeights = [no.wp for no in edge]
             cloudWeights = [no.wp for no in cloud]
@@ -87,14 +96,17 @@ def partitioner(spn,nmax,pe,pc,l):
 
         for p in possibility:
             #Calculating total latency
-            latency.append(max([pe * (p[0] + sum([x.count for x in edge])), pc * sum([x.count for x in cloud])+2*l]) + pe)
+            #print(p)
+            latency.append(max([pe * (p.count + sum([x.count for x in edge])), pc * sum([x.count for x in cloud])+2*l]) + pe)
 
         #Selecting minimum latency path
         SelectedPath = latency.index(min(latency))
 
         nmax = nmax - cloud[SelectedPath].count
         edge.append(cloud.pop(SelectedPath))
-        print("appending path to edge")
+        #wrong?
+        possibility.pop(SelectedPath)
+        #print("appending path to edge")
 
 
 def convertHistOps(parse:str, li=[]):
@@ -116,7 +128,7 @@ def convertHistOps(parse:str, li=[]):
             for x in range(len(parse)):
                 for y in range(1,len(parse[x])):
                     parse[x][y]=parse[x][y].split(":")
-                    parse[x][y][2] = [float('.'.join(v.split('.')[0:2])) for v in parse[x][y][2].split(",")]
+                    parse[x][y][2] = [float(re.sub("e$","",'.'.join(v.split('.')[0:2]))) for v in parse[x][y][2].split(",")]
                     parse[x][y][1] = [int(v) for v in parse[x][y][1].split(",")]
 
             return parse
@@ -168,17 +180,19 @@ def partition_processor(spn,nmax,pe,pc,l):
     :return:
     """
     edge, cloud, edge_weights, cloud_weights = partitioner(spn,nmax,pe,pc,l)
+    #print("post part")
+    #print(len(edge),len(cloud))
 
     if len(edge)>0:
         edge = [convertHistOps(spn_to_str_equation(x)) for x in edge]
 
     else:
-        edge = [""]
+        edge = []
 
     if len(cloud)>0:
         cloud = [convertHistOps(spn_to_str_equation(x)) for x in cloud ]
 
-    else: cloud = [""]
+    else: cloud = []
 
     #print(edge)
     #print(cloud)
