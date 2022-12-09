@@ -58,7 +58,7 @@ def processor(part, data, marginals, rootWeights):
 
 
 for message in queue.receive_messages():
-    print(message)
+    print(message.body)
 
 """
 for queue in sqs.queues.all():
