@@ -74,7 +74,7 @@ while True:
         client.publish(
             topic = 'esp32/result',
             qos=1,
-            payload={'id':contents['id'],'result':result}
+            payload= json.dumps({'id':contents['id'],'result':result})
         )
     time.sleep(.5/1000)
 
