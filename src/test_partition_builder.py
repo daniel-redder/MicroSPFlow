@@ -3,7 +3,7 @@ from aware_path_partitioner import partition_processor
 import random
 
 test_datasets = ["spn_baudio.pkle","spn_bnetflix.pkle","spn_jester.pkle","spn_kdd.pkle","spn_msnbc.pkle","spn_nltcs.pkle"]
-test_datasets = ["spn_msnbc.pkle"]
+#test_datasets = ["spn_msnbc.pkle"]
 
 def allPart(test_datasets,pe,pc,l):
     fullSet = []
