@@ -1,0 +1,108 @@
+"""
+Author: Daniel Redder
+runs con-inference on target device
+"""
+import json
+from processor import processor
+from multiprocessing import Event
+import datetime
+import secrets
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+
+
+partition_file = "stats/desktop.json"
+
+server_crt = "root-CA.crt"
+local_crt = "esp32.cert.pem"
+
+private_key_file = "esp32.private.key"
+
+mqtt_client_id = "esp32"
+mqtt_port = 8883
+
+mqtt_host = secrets.endp
+
+mqtt = AWSIoTMQTTClient(mqtt_client_id)
+mqtt.configureEndpoint(mqtt_host, mqtt_port)
+mqtt.configureCredentials(server_crt, private_key_file, local_crt)
+
+# from https://github.com/aws/aws-iot-device-sdk-python
+mqtt.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
+mqtt.configureDrainingFrequency(2)  # Draining: 2 Hz
+mqtt.configureConnectDisconnectTimeout(10)  # 10 sec
+mqtt.configureMQTTOperationTimeout(5)  # 5 sec
+
+
+response_catcher = Event()
+response = None
+
+def responseCatch(client, userdata, message):
+    global response_catcher
+    global response
+    response = float(json.loads(message.payload)["result"])
+    print(message.payload)
+    response_catcher.set()
+
+
+
+#ignores specific histogram bounds because there is always a bucket from 0-1 and the exact type of joint/marginal inference is irrelevent
+def build_test_set(scope):
+    test_set = [{"marginal":{x:0 for x in scope}, "data":{x:.8 for x in scope}}]
+
+    full_marg = {x:1 for x in scope}
+    full_marg["V1"] = 0
+    full_data = {x:None for x in scope}
+    full_data["V1"] = .8
+    test_set.append({"marginal":full_marg,"data":full_data})
+
+    return test_set
+
+
+with open(partition_file,"r") as f:
+    spn = json.load(f)
+    spn = spn["hold"]
+
+
+process_set = []
+for process in spn:
+
+    cloud_process = {"spn":process["cloud"],"data":None,"scope":process["scope"],"marginal":None,"rootWeights":process["rootWeights"][1]}
+    edge_process = {"spn":process["edge"],"data":None,"scope":process["scope"],"marginal":None,"rootWeights":process["rootWeights"][0]}
+
+    test_set = build_test_set(process["scope"])
+
+
+
+    joint_marginal = []
+    for test in test_set:
+
+        cloud_process["data"], cloud_process["marginal"] = test["data"], test["marginal"]
+        edge_process["data"], edge_process["marginal"] = test["data"], test["marginal"]
+
+        l_p = datetime.datetime.now()
+        mqtt.publish("esp32/profile", str(cloud_process), 0)
+        mqtt.subscribe("esp32/profileCallback", 1, callback = responseCatch)
+
+        edge_result=processor(edge_process["spn"],edge_process["data"],edge_process["marginal"],edge_process["rootWeights"])
+
+        l_edge = datetime.datetime.now()
+
+        global response_catcher
+        response_catcher.wait(100)
+        response_catcher.clear()
+
+        global response
+
+        result = edge_process + response
+
+        l_d = datetime.datetime.now()
+
+        joint_marginal.append({"fullLatency":l_d-l_p,"edgeLatency":l_edge-l_p,"latencyish":l_d-l_p-(l_edge-l_p)})
+
+    process_set.append({"id":process['id'],"data":joint_marginal})
+
+
+process_set = {"hold":process_set}
+
+with open("stats/results.json","w+") as f:
+    json.dump(process_set)

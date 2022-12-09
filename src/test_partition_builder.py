@@ -1,6 +1,7 @@
 import pickle
 from aware_path_partitioner import partition_processor
 import random
+import json
 
 test_datasets = ["spn_baudio.pkle","spn_bnetflix.pkle","spn_jester.pkle","spn_kdd.pkle","spn_msnbc.pkle","spn_nltcs.pkle"]
 #test_datasets = ["spn_msnbc.pkle"]
@@ -17,7 +18,7 @@ def allPart(test_datasets,pe,pc,l):
         for i in range(0,400,10):
             edge, cloud, scope, root_weights = partition_processor(model,i,pe,pc,l)
 
-            partial.append({"data":None,"marginal":None,"scope":scope,"edge":edge,"cloud":cloud,"rootWeights":root_weights})
+            partial.append({"id":f"{spnPath}{i}","data":None,"marginal":None,"scope":scope,"edge":edge,"cloud":cloud,"rootWeights":root_weights})
 
 
         fullSet.append(partial)
@@ -59,5 +60,23 @@ print("desktop stats & partition")
 computer_part = allPart(test_datasets, 0.001, 0.5834444444444444, 105.0)
 
 
-print(computer_part)
+#print(computer_part)
+
+with open("stats/desktop.json","w+") as f:
+    json.dump({"hold":computer_part},f)
+
+
 print("stats (onedge, cocloud, oncloud): ",stats(computer_part,test_datasets))
+
+
+
+print("Pie 4 stats & partition")
+computer_part = allPart(test_datasets,0.052, 0.552, 129.372)
+
+with open("stats/pi4.json","w+") as f:
+    json.dump({"hold":computer_part},f)
+
+print("stats (onedge, cocloud, oncloud): ",stats(computer_part,test_datasets))
+
+
+
