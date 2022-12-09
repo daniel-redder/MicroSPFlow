@@ -32,6 +32,8 @@ mqtt.configureDrainingFrequency(2)  # Draining: 2 Hz
 mqtt.configureConnectDisconnectTimeout(10)  # 10 sec
 mqtt.configureMQTTOperationTimeout(5)  # 5 sec
 
+mqtt.connect()
+
 global response_catcher
 response_catcher = Event()
 global response
@@ -69,13 +71,22 @@ with open(partition_file,"r") as f:
 
 
 process_set = []
+
+unfolded_spn = []
+
 for process in spn:
+    for l in process:
+        unfolded_spn.append(l)
+
+
+
+for process in unfolded_spn:
 
     cloud_process = {"spn":process["cloud"],"data":None,"scope":process["scope"],"marginal":None,"rootWeights":process["rootWeights"][1]}
     edge_process = {"spn":process["edge"],"data":None,"scope":process["scope"],"marginal":None,"rootWeights":process["rootWeights"][0]}
 
     test_set = build_test_set(process["scope"])
-
+    print("beginning test")
 
 
     joint_marginal = []
@@ -86,24 +97,25 @@ for process in spn:
 
         l_p = datetime.datetime.now()
         mqtt.publish("esp32/process", str(cloud_process), 0)
+        print("-- process published")
 
 
         edge_result=processor(edge_process["spn"],edge_process["data"],edge_process["marginal"],edge_process["rootWeights"])
 
+        print("--finished edge partition")
+
         l_edge = datetime.datetime.now()
 
-        response_catcher
         response_catcher.wait(100)
         response_catcher.clear()
 
-
-
-        result = edge_process + response
+        result = edge_result + response
 
         l_d = datetime.datetime.now()
 
         joint_marginal.append({"fullLatency":l_d-l_p,"edgeLatency":l_edge-l_p,"latencyish":l_d-l_p-(l_edge-l_p)})
 
+    print("finished joint_marg pair")
     process_set.append({"id":process['id'],"data":joint_marginal})
 
 
@@ -112,6 +124,6 @@ process_set = {"hold":process_set}
 mqtt.unsubscribe("esp32/result")
 mqtt.disconnect()
 
-
+print("saving results to stats/results.json")
 with open("stats/results.json","w+") as f:
     json.dump(process_set)

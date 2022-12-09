@@ -65,12 +65,16 @@ def processor(part, data, marginals, rootWeights):
 while True:
     for message in queue.receive_messages():
         print("message found")
-        print(message.body)
+
 
         p_c_b = datetime.datetime.now()
 
         contents = message.body.replace("'",'"')
+        contents = contents.replace("'",'"')
         contents = contents.replace("None","null")
+
+        print(contents)
+
         contents=json.loads(contents)
         message.delete()
 
