@@ -4,6 +4,8 @@ Author: Daniel Redder
 
 
 
+
+
 def marginilizer(edge, scope):
     results = []
     for pathind in range(len(edge)):
