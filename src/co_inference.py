@@ -32,7 +32,7 @@ mqtt.configureDrainingFrequency(2)  # Draining: 2 Hz
 mqtt.configureConnectDisconnectTimeout(10)  # 10 sec
 mqtt.configureMQTTOperationTimeout(5)  # 5 sec
 
-
+global response_catcher
 response_catcher = Event()
 response = None
 
@@ -91,7 +91,7 @@ for process in spn:
 
         l_edge = datetime.datetime.now()
 
-        global response_catcher
+        response_catcher
         response_catcher.wait(100)
         response_catcher.clear()
 
