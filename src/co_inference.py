@@ -82,7 +82,7 @@ for process in spn:
 
 for process in unfolded_spn:
 
-    cloud_process = {"spn":process["cloud"],"data":None,"scope":process["scope"],"marginal":None,"rootWeights":process["rootWeights"][1]}
+    cloud_process = {"id":process["id"],"spn":process["cloud"],"data":None,"scope":process["scope"],"marginal":None,"rootWeights":process["rootWeights"][1]}
     edge_process = {"spn":process["edge"],"data":None,"scope":process["scope"],"marginal":None,"rootWeights":process["rootWeights"][0]}
 
     test_set = build_test_set(process["scope"])
