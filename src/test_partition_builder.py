@@ -53,7 +53,7 @@ def stats(partset,test_datasets):
     return stat
 
 
-
+"""
 #i7 desktop processing
 print("desktop stats & partition")
 
@@ -67,9 +67,9 @@ with open("stats/desktop.json","w+") as f:
 
 
 print("stats (onedge, cocloud, oncloud): ",stats(computer_part,test_datasets))
+"""
 
-
-
+"""
 print("Pie 4 stats & partition")
 computer_part = allPart(test_datasets,0.052, 0.552, 129.372)
 
@@ -77,6 +77,14 @@ with open("stats/pi4.json","w+") as f:
     json.dump({"hold":computer_part},f)
 
 print("stats (onedge, cocloud, oncloud): ",stats(computer_part,test_datasets))
+"""
 
 
+print("Pie 4 stats & partition")
+computer_part = allPart(test_datasets,0.676, 0.56577, 270.8)
+
+with open("stats/piZero.json","w+") as f:
+    json.dump({"hold":computer_part},f)
+
+print("stats (onedge, cocloud, oncloud): ",stats(computer_part,test_datasets))
 
