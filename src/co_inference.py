@@ -44,7 +44,7 @@ def responseCatch(client, userdata, message):
     global response
     response = float(json.loads(message.payload)["result"])
     print(message.payload)
-    message.delete()
+    #message.delete()
     response_catcher.set()
 
 
