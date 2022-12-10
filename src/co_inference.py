@@ -113,7 +113,7 @@ for process in unfolded_spn:
 
         l_d = datetime.datetime.now()
 
-        joint_marginal.append({"fullLatency":l_d-l_p,"edgeLatency":l_edge-l_p,"latencyish":l_d-l_p-(l_edge-l_p)})
+        joint_marginal.append({"fullLatency":(l_d-l_p).microseconds,"edgeLatency":(l_edge-l_p).microseconds,"latencyish":(l_d-l_p-(l_edge-l_p)).microseconds})
 
     print("finished joint_marg pair")
     process_set.append({"id":process['id'],"data":joint_marginal})
@@ -126,4 +126,4 @@ mqtt.disconnect()
 
 print("saving results to stats/results.json")
 with open("stats/results.json","w+") as f:
-    json.dump(process_set)
+    json.dump(process_set,f)
