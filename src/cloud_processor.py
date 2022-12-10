@@ -47,7 +47,14 @@ def processor(part, data, marginals, rootWeights):
     for x in part:
         edgeArch.append(0)
         for sumind in range(len(x)):
-            hold = float(x[sumind][0])
+
+            #not sure why the weights are being duplicated here, for now bypassing
+            try:
+                hold = float(x[sumind][0])
+            except:
+                hold = float("0."+x[sumind][0].split(".")[1])
+
+
             #print(hold)
             for i in range(1,len(x[sumind])):
                 if x[sumind][i][3]<1:

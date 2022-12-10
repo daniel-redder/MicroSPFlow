@@ -54,11 +54,11 @@ mqtt.subscribe("esp32/result", 1, callback = responseCatch)
 
 #ignores specific histogram bounds because there is always a bucket from 0-1 and the exact type of joint/marginal inference is irrelevent
 def build_test_set(scope):
-    test_set = [{"marginal":{x:0 for x in scope}, "data":{x:.8 for x in scope}}]
+    test_set = [{"marginal":{f"V{x}":0 for x in scope}, "data":{f"V{x}":.8 for x in scope}}]
 
-    full_marg = {x:1 for x in scope}
+    full_marg = {f"V{x}":1 for x in scope}
     full_marg["V1"] = 0
-    full_data = {x:None for x in scope}
+    full_data = {f"V{x}":None for x in scope}
     full_data["V1"] = .8
     test_set.append({"marginal":full_marg,"data":full_data})
 
@@ -87,7 +87,7 @@ for process in unfolded_spn:
 
     test_set = build_test_set(process["scope"])
     print("beginning test")
-
+    #print(test_set[0])
 
     joint_marginal = []
     for test in test_set:
